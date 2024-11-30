@@ -6,10 +6,10 @@ RUN apt update
 
 COPY /requirements.txt /app/requirements.txt
 
-RUN pip install -r requirements.txt
+RUN pip install -r /app/requirements.txt
 
 COPY . /app/
 
-ENTRYPOINT [ "python" ]
+ENTRYPOINT ["python"]
 
 CMD ["app.py"]
