@@ -1,0 +1,5 @@
+__pycache__/
+static/
+templates/
+uploads/
+dog_model.ipynb
