@@ -100,6 +100,7 @@ from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from moviepy.editor import VideoFileClip
 
+print(f"Current working directory: {os.getcwd()}")
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -108,10 +109,8 @@ CORS(app)  # Enable CORS for all routes
 USERNAME = 'admin'
 PASSWORD = 'admin123'
 
-
-
 if not os.path.exists('processed_dataset'):
-    os.makedirs('processed_dataset')
+    os.makedirs('processed_datasets')
 
 # Folder structure for classes
 classes = ['Happy', 'Pain', 'Howling', 'Aggressive', 'Unknown']
@@ -166,7 +165,7 @@ def upload_audio():
         return jsonify({"status": "error", "message": "Only .wav files are allowed"}), 400
 
     # Create the folder if it doesn't exist
-    folder_path = os.path.join('processed_data', class_name)
+    folder_path = os.path.join('processed_dataset', class_name)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
 
@@ -182,19 +181,22 @@ def upload_audio():
 @app.route('/train_model', methods=['POST'])
 def train_model():
     try:
-        # Use nbconvert to execute the Jupyter notebook
+        # Ensure we're in the correct working directory
         result = subprocess.run(
-            ['jupyter', 'nbconvert', '--to', 'notebook', '--execute', 'dog_model.ipynb'],
+            ['python', 'dog_model.py'],
+            cwd='C:/Users/asfor/OneDrive/Desktop/Backend-rebder - Copy',  # Set the directory explicitly
             check=True, text=True, capture_output=True
         )
-        
+
         # Check if there is any error in the output
         if result.stderr:
             return jsonify({"status": "error", "message": f"Error during training: {result.stderr}"}), 500
 
-        return jsonify({"status": "success", "message": "Model training started!"}), 200
+        print(f"Subprocess stdout: {result.stdout}")
+        return jsonify({"status": "success", "message": "Model training started successfully!"}), 200
     except subprocess.CalledProcessError as e:
         return jsonify({"status": "error", "message": f"Error training model: {str(e)}"}), 500
+
 
 
 # Video prediction route
