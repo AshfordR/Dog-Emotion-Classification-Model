@@ -95,6 +95,8 @@ import librosa
 import numpy as np
 import pickle
 import os
+import nbformat
+from nbconvert.preprocessors import ExecutePreprocessor
 import subprocess
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
@@ -178,24 +180,23 @@ def upload_audio():
         return jsonify({"status": "error", "message": f"File upload failed: {str(e)}"}), 500
 
 
+
 @app.route('/train_model', methods=['POST'])
 def train_model():
     try:
-        # Ensure we're in the correct working directory
-        result = subprocess.run(
-            ['python', 'dog_model.py'],
-            cwd='C:/Users/asfor/OneDrive/Desktop/Backend-rebder - Copy',  # Set the directory explicitly
-            check=True, text=True, capture_output=True
-        )
+        notebook_path = 'C:/Users/asfor/OneDrive/Desktop/Backend-rebder - Copy/dog_model.ipynb'
+        with open(notebook_path, 'r', encoding='utf-8') as notebook_file:
+            notebook = nbformat.read(notebook_file, as_version=4)
+            executor = ExecutePreprocessor(timeout=600, kernel_name='python3')
 
-        # Check if there is any error in the output
-        if result.stderr:
-            return jsonify({"status": "error", "message": f"Error during training: {result.stderr}"}), 500
+            # Execute the notebook
+            executor.preprocess(notebook, {'metadata': {'path': os.path.dirname(notebook_path)}})
 
-        print(f"Subprocess stdout: {result.stdout}")
-        return jsonify({"status": "success", "message": "Model training started successfully!"}), 200
-    except subprocess.CalledProcessError as e:
-        return jsonify({"status": "error", "message": f"Error training model: {str(e)}"}), 500
+        return jsonify({"status": "success", "message": "Model training completed successfully!"}), 200
+
+    except Exception as e:
+        print(f"Error executing notebook: {e}")
+        return jsonify({"status": "error", "message": f"Error training model: {e}"}), 500
 
 
 
