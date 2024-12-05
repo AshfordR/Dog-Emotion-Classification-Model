@@ -267,7 +267,7 @@ from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from moviepy.editor import VideoFileClip
 
-print(f"Current working directory: {os.getcwd()}")
+# print(f"Current working directory: {os.getcwd()}")
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -276,7 +276,7 @@ CORS(app)  # Enable CORS for all routes
 USERNAME = 'admin'
 PASSWORD = 'admin123'
 
-app.secret_key = 'your_secret_key'  # Required for session management
+app.secret_key = 'ashreb'  # Required for session management
 
 if not os.path.exists('processed_dataset'):
     os.makedirs('processed_datasets')

@@ -69,6 +69,9 @@
         .metrics-table th, .metrics-table td {
             text-align: center;
         }
+        .button-spacing {
+        margin-bottom: 10px; /* Adjust as needed */
+    }
     </style>
 </head>
 <body>
@@ -92,17 +95,17 @@
         <div class="upload-section" id="uploadSection" style="display:none;">
             <label for="audioUpload">Upload Audio (.wav format):</label>
             <input type="file" class="form-control" id="audioUpload" accept=".wav">
-            <button class="btn btn-primary mt-3" id="uploadBtn">Upload</button>
+            <button class="btn btn-primary mt-3 button-spacing" id="uploadBtn">Upload</button>
         </div>
 
         <!-- Train Button -->
         <div class="train-section mt-4">
-            <button class="btn btn-primary" id="trainBtn">Train Model</button>
+            <button class="btn btn-primary button-spacing" id="trainBtn">Train Model</button>
         </div>
 
         <!-- View Analytics Button -->
         <div class="analytics-section mt-4">
-            <button class="btn btn-primary" id="viewAnalyticsBtn">View Analytics</button>
+            <button class="btn btn-primary button-spacing" id="viewAnalyticsBtn">View Analytics</button>
         </div>
 
         <!-- Table Section for Analytics -->
