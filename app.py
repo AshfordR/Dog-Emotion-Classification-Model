@@ -416,9 +416,6 @@ def train_model():
 # Video prediction route
 @app.route('/predict', methods=['POST'])
 def predict():
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))  # Redirect to login if not logged in
-
     if 'videofile' not in request.files:
         return jsonify({"status": "error", "message": "No file part in the request"}), 400
 
