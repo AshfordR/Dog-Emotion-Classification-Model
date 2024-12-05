@@ -256,15 +256,13 @@
 
 
 
-
-from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 import librosa
 import numpy as np
 import pickle
 import os
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
-import subprocess
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from moviepy.editor import VideoFileClip
@@ -277,6 +275,8 @@ CORS(app)  # Enable CORS for all routes
 # Hardcoded login credentials
 USERNAME = 'admin'
 PASSWORD = 'admin123'
+
+app.secret_key = 'your_secret_key'  # Required for session management
 
 if not os.path.exists('processed_dataset'):
     os.makedirs('processed_datasets')
@@ -309,6 +309,7 @@ def login():
         
         # Check if credentials match
         if username == USERNAME and password == PASSWORD:
+            session['logged_in'] = True  # Store the login state in the session
             return redirect(url_for('dashboard'))  # Redirect to dashboard after login
         else:
             return render_template('login.html', error="Invalid credentials. Please try again.")
@@ -317,10 +318,15 @@ def login():
 # Dashboard page after login (You can modify this page as per your needs)
 @app.route('/dashboard')
 def dashboard():
+    if 'logged_in' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
     return render_template('dashboard.html')
 
 @app.route('/get_folder_structure', methods=['GET'])
 def get_folder_structure():
+    if 'logged_in' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
     dataset_path = 'processed_dataset'
     structure = {}
     
@@ -336,9 +342,11 @@ def get_folder_structure():
         "structure": structure
     })
 
-
 @app.route('/upload_audio', methods=['POST'])
 def upload_audio():
+    if 'logged_in' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
     class_name = request.form['class']
     audio_file = request.files.get('audio')
 
@@ -363,18 +371,15 @@ def upload_audio():
     except Exception as e:
         return jsonify({"status": "error", "message": f"File upload failed: {str(e)}"}), 500
 
-
-
 @app.route('/get_performance_metrics', methods=['GET'])
 def get_performance_metrics():
+    if 'logged_in' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
     try:
         # Load the model (or metrics) from the pickle file
         with open('model/performance_metrics.pkl', 'rb') as f:
             model = pickle.load(f)
-
-        # Print the type and contents of the loaded object for debugging
-        print(type(model))
-        print(model)
 
         # Assuming the model object is a dictionary with the performance metrics
         if isinstance(model, dict):
@@ -389,9 +394,11 @@ def get_performance_metrics():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-    
 @app.route('/train_model', methods=['POST'])
 def train_model():
+    if 'logged_in' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
     try:
         notebook_path = 'C:/Users/asfor/OneDrive/Desktop/Backend-rebder - Copy/dog_model.ipynb'
         with open(notebook_path, 'r', encoding='utf-8') as notebook_file:
@@ -404,20 +411,18 @@ def train_model():
         return jsonify({"status": "success", "message": "Model training completed successfully!"}), 200
 
     except Exception as e:
-        print(f"Error executing notebook: {e}")
         return jsonify({"status": "error", "message": f"Error training model: {e}"}), 500
-
-
 
 # Video prediction route
 @app.route('/predict', methods=['POST'])
 def predict():
+    if 'logged_in' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
     if 'videofile' not in request.files:
         return jsonify({"status": "error", "message": "No file part in the request"}), 400
 
     file = request.files['videofile']
-    print(f"Received file: {file.filename}, mimetype: {file.mimetype}")
-
     if file and (file.mimetype in ['video/mp4', 'application/octet-stream'] or file.filename.endswith('.mp4')):
 
         try:
@@ -430,32 +435,32 @@ def predict():
             video = VideoFileClip(filepath)
             audio_path = filepath.replace(".mp4", ".wav")
             video.audio.write_audiofile(audio_path)
-            print(f"Audio saved at: {audio_path}")
 
             # Load and extract features
             try:
                 y, sr = librosa.load(audio_path, sr=22050)
                 features = extract_features(y, sr)
                 features_rfe = rfe.transform(features.reshape(1, -1))
-                print(f"Extracted features: {features_rfe}")
+
             except Exception as e:
-                print(f"Error during feature extraction: {e}")
                 return jsonify({"status": "error", "message": f"Feature extraction failed: {e}"}), 500
 
             # Make prediction
             try:
                 prediction = model.predict(features_rfe)[0]
-                print(f"Prediction: {prediction}")
                 return jsonify({"status": "success", "prediction": prediction})
             except Exception as e:
-                print(f"Error during prediction: {e}")
                 return jsonify({"status": "error", "message": f"Prediction failed: {e}"}), 500
 
         except Exception as e:
-            print(f"Error processing video: {e}")
             return jsonify({"status": "error", "message": f"Processing failed: {e}"}), 500
 
     return jsonify({"status": "error", "message": "Invalid file type."}), 400
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)  # Remove the login session
+    return redirect(url_for('login'))  # Redirect to login
 
 if __name__ == '__main__':
     # Ensure uploads folder exists
